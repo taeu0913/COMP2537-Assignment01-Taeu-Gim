@@ -32,11 +32,11 @@ It allows users to sign up, log in, and access a members-only area with session-
 - dotenv
 
 ## Project Structure
-models/
-views/
-public/
-server.js
-.env (not included in repo)
+- models/
+- views/
+- public/
+- server.js
+- .env (not included in repo)
 
 ---
 
