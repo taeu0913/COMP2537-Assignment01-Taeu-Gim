@@ -31,13 +31,6 @@ It allows users to sign up, log in, and access a members-only area with session-
 - EJS (templating engine)
 - dotenv
 
-## Project Structure
-- models/
-- views/
-- public/
-- server.js
-- .env (not included in repo)
-
 ---
 
 ## Setup Instructions
