@@ -33,19 +33,19 @@ It allows users to sign up, log in, and access a members-only area with session-
 
 ## Project Structure
 ---
-public/
-├── images/
-├── styles.css
+public/ 
+|── images/
+|── styles.css
 
-views/
-├── home.ejs
-├── login.ejs
-├── signup.ejs
-├── members.ejs
-├── 404.ejs
+views/ 
+|── home.ejs
+|── login.ejs
+|── signup.ejs
+|── members.ejs
+|── 404.ejs
 
-models/
-├── user.js
+models/ 
+|── user.js
 
 server.js
 .env (NOT included in repo)
