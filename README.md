@@ -33,25 +33,34 @@ It allows users to sign up, log in, and access a members-only area with session-
 
 ## Project Structure
 ---
-public/ 
-|── images/
-|── styles.css
 
-views/ 
-|── home.ejs
-|── login.ejs
-|── signup.ejs
-|── members.ejs
-|── 404.ejs
-
-models/ 
-|── user.js
-
-server.js
-.env (NOT included in repo)
----
-
-
+COMP2537-Assignment1/
+│
+├── server.js
+├── package.json
+├── package-lock.json
+├── .env                  ❌ (DO NOT push to GitHub)
+├── .gitignore
+├── README.md
+│
+├── models/
+│   └── user.js
+│
+├── views/
+│   ├── home.ejs
+│   ├── login.ejs
+│   ├── signup.ejs
+│   ├── members.ejs
+│   └── 404.ejs
+│
+├── public/
+│   ├── styles.css
+│   └── images/
+│       ├── img1.jpg
+│       ├── img2.jpg
+│       └── img3.jpg
+│
+└── node_modules/      (auto-generated, not pushed)
 ---
 
 ## Setup Instructions
