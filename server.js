@@ -1,12 +1,15 @@
 require('dotenv').config();
+
 const express = require("express");
 const session = require("express-session");
-const bcrypt = require('bcrypt');
-const User = require('./models/user');
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+
+const User = require("./models/user");
+const MongoStore = require("connect-mongo");
+
 const PORT = process.env.PORT || 3000;
 const app = express();
-const MongoStore = require('connect-mongo');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -15,7 +18,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: new MongoStore({
+    store: MongoStore.create({
         mongoUrl: process.env.MONGO_URI
     }),
     cookie: {
