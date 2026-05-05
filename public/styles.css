@@ -1,0 +1,103 @@
+
+/* GLOBAL STYLES */
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    text-align: center;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+
+    margin: 0;
+}
+
+/* MEMBERS PAGE */
+
+.card {
+    background: white;
+    padding: 20px;
+    margin: 50px auto;
+    width: 400px;
+    border-radius: 10px;
+}
+
+.card img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.card a {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* LOGIN / SIGNUP PAGE */
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 300px;
+    box-shadow: 0px 0px 10px #ccc;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: black;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button.signup {
+    background: green;
+}
+
+/* 404 PAGE */
+
+.error-body {
+    background: #f4f4f4;
+    text-align: center;
+    padding-top: 100px;
+}
+
+.box {
+    background: white;
+    display: inline-block;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px #ccc;
+}
+
+.box h1 {
+    font-size: 60px;
+    margin: 0;
+}
+
+.box p {
+    font-size: 18px;
+}
+
+.box a {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: black;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.box a:hover {
+    background: #333;
+}
