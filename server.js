@@ -4,6 +4,8 @@ const express = require("express");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const Joi = require('joi');
+const crypto = require('crypto');
 
 const User = require("./models/user");
 const MongoStore = require("connect-mongo");
@@ -11,63 +13,177 @@ const MongoStore = require("connect-mongo");
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+
+// =====================
+// BASIC SETUP
+// =====================
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+app.set("view engine", "ejs");
+
+// =====================
+// ENCRYPTION HELPER
+// =====================
+
+const algorithm = 'aes-256-ctr';
+const secretKey = crypto
+    .createHash('sha256')
+    .update(process.env.SESSION_SECRET)
+    .digest('base64')
+    .substring(0, 32);
+
+function encrypt(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+
+    const encrypted = Buffer.concat([
+        cipher.update(text),
+        cipher.final()
+    ]);
+
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(hash) {
+    const [iv, content] = hash.split(':');
+
+    const decipher = crypto.createDecipheriv(
+        algorithm,
+        secretKey,
+        Buffer.from(iv, 'hex')
+    );
+
+    const decrypted = Buffer.concat([
+        decipher.update(Buffer.from(content, 'hex')),
+        decipher.final()
+    ]);
+
+    return decrypted.toString();
+}
+
+// =====================
+// SESSION
+// =====================
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+
     store: MongoStore.create({
         mongoUrl: process.env.MONGO_URI
     }),
+
     cookie: {
-        maxAge: 1000 * 60 * 60
+        maxAge: 1000 * 60 * 60,
+        httpOnly: true
     }
 }));
 
-app.set("view engine", "ejs");
 
-// MongoDB connect
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log(err));
+// =====================
+// GLOBAL USER HELPER
+// =====================
 
-//routes
-// Home
-app.get('/', (req, res) => {
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    next();
+});
+
+
+// =====================
+// MIDDLEWARE
+// =====================
+function isAuthenticated(req, res, next) {
+
+    if (req.session.user) {
+        return next();
+    }
+
+    return res.redirect('/login');
+}
+
+function isAdmin(req, res, next) {
+
+    if (req.session.user && req.session.user.role === 'admin') {
+        return next();
+    }
+
+    return res.status(403).send('Access Denied');
+}
+
+function isAuthenticated(req, res, next) {
+
     if (!req.session.user) {
         return res.redirect('/login');
     }
 
-    res.render('home', { user: req.session.user });
+    try {
+        const decrypted = JSON.parse(decrypt(req.session.user));
+        req.user = decrypted;
+        return next();
+    } catch (err) {
+        return res.redirect('/login');
+    }
+}
+
+
+// =====================
+// DATABASE
+// =====================
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.log(err));
+
+
+// =====================
+// ROUTES
+// =====================
+
+
+// HOME
+app.get('/', isAuthenticated, (req, res) => {
+
+    res.render('home');
 });
 
-//Signup
+
+// SIGNUP
 app.get("/signup", (req, res) => {
+
     res.render("signup", { error: null });
 });
 
 app.post('/signup', async (req, res) => {
+
     try {
+
+        const schema = Joi.object({
+            username: Joi.string().alphanum().min(3).max(20).required(),
+            password: Joi.string().min(3).max(20).required()
+        });
+
+        const { error } = schema.validate(req.body);
+
+        if (error) {
+            return res.send(error.details[0].message);
+        }
+
         const { username, password } = req.body;
 
-        // check if user exists
         const existingUser = await User.findOne({ username });
+
         if (existingUser) {
             return res.send('User already exists');
         }
 
-        // hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // save user
-        const newUser = new User({
+        await new User({
             username,
-            password: hashedPassword
-        });
-
-        await newUser.save();
+            password: hashedPassword,
+            role: 'user'
+        }).save();
 
         res.redirect('/login');
 
@@ -77,13 +193,17 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-//login
+
+// LOGIN
 app.get("/login", (req, res) => {
+
     res.render("login", { error: null });
 });
 
 app.post('/login', async (req, res) => {
+
     try {
+
         const { username, password } = req.body;
 
         const user = await User.findOne({ username });
@@ -99,12 +219,21 @@ app.post('/login', async (req, res) => {
         }
 
         // create session
-        req.session.user = {
+        req.session.user = encrypt(JSON.stringify({
             id: user._id,
-            username: user.username
-        };
+            username: user.username,
+            role: user.role
+        }));
 
-        res.redirect('/');
+        req.session.save((err) => {
+
+            if (err) {
+                console.log(err);
+                return res.send("Session error");
+            }
+
+            return res.redirect('/');
+        });
 
     } catch (err) {
         console.log(err);
@@ -112,12 +241,11 @@ app.post('/login', async (req, res) => {
     }
 });
 
-//members
-app.get('/members', (req, res) => {
 
-    if (!req.session.user) {
-        return res.redirect('/');
-    }
+// MEMBERS
+app.get('/members', isAuthenticated, async (req, res) => {
+
+    const users = await User.find();
 
     const images = [
         '/images/img1.jpg',
@@ -125,25 +253,69 @@ app.get('/members', (req, res) => {
         '/images/img3.jpg'
     ];
 
-    const randomImage = images[Math.floor(Math.random() * images.length)];
+    const usersWithImages = users.map(user => ({
+        username: user.username,
+        role: user.role,
+        image: images[Math.floor(Math.random() * images.length)]
+    }));
 
     res.render('members', {
-        user: req.session.user,
-        image: randomImage
+        users: usersWithImages
     });
 });
 
-//logout
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
+
+// ADMIN
+app.get('/admin', isAuthenticated, isAdmin, async (req, res) => {
+
+    const users = await User.find();
+
+    res.render('admin', {
+        users
+    });
 });
 
-// 404 handler
+
+// PROMOTE
+app.get('/promote/:id', isAuthenticated, isAdmin, async (req, res) => {
+
+    await User.findByIdAndUpdate(req.params.id, {
+        role: 'admin'
+    });
+
+    res.redirect('/admin');
+});
+
+
+// DEMOTE
+app.get('/demote/:id', isAuthenticated, isAdmin, async (req, res) => {
+
+    await User.findByIdAndUpdate(req.params.id, {
+        role: 'user'
+    });
+
+    res.redirect('/admin');
+});
+
+
+// LOGOUT
+app.get('/logout', (req, res) => {
+
+    req.session.destroy(() => {
+        res.redirect('/login');
+    });
+});
+
+
+// 404
 app.use((req, res) => {
+
     res.status(404).render('404');
 });
 
+// =====================
+// START SERVER
+// =====================
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

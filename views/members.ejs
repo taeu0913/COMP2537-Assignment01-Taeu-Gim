@@ -1,26 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Members Area</title>
-    <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
+<%- include('partials/header') %>
 
-    <div class="card">
-        <h1>Hello, <%= user.username %> 👋</h1>
+<div class="members-container">
 
-        <img src="<%= image %>" alt="Random Image">
+    <h1>Members Area</h1>
 
-        <br>
+    <div class="members-grid">
 
-        <a href="/members">Show another image</a>
+        <% users.forEach(user => { %>
 
-        <br>
+            <div class="card">
 
-        <a href="/">Home</a> |
-        <a href="/logout">Logout</a>
+                <img src="<%= user.image %>" alt="Profile Image">
+
+                <h2><%= user.username %></h2>
+
+                <p>Role: <%= user.role %></p>
+
+            </div>
+
+        <% }) %>
+
     </div>
 
-</body>
-</html>
+    <div class="members-links">
+
+        <% if (user && user.role === 'admin') { %>
+
+            <a href="/admin">Admin Page</a>
+
+        <% } %>
+
+        <a href="/logout">Logout</a>
+
+    </div>
+
+</div>
+
+<%- include('partials/footer') %>

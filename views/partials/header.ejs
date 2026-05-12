@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMP 2537 Assignment</title>
+
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+
+    <a href="/">Home</a>
+
+    <% if (typeof user !== 'undefined' && user) { %>
+
+        <a href="/members">Members</a>
+
+        <% if (user.role === 'admin') { %>
+            <a href="/admin">Admin</a>
+        <% } %>
+
+        <a href="/logout">Logout</a>
+
+    <% } else { %>
+
+        <a href="/login">Login</a>
+        <a href="/signup">Signup</a>
+
+    <% } %>
+
+</nav>
+
+<main class="page-wrapper">
