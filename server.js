@@ -5,7 +5,6 @@ const session = require("express-session");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const Joi = require('joi');
-const crypto = require('crypto');
 
 const User = require("./models/user");
 const MongoStore = require("connect-mongo");
@@ -21,46 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.set("view engine", "ejs");
-
-// =====================
-// ENCRYPTION HELPER
-// =====================
-
-const algorithm = 'aes-256-ctr';
-const secretKey = crypto
-    .createHash('sha256')
-    .update(process.env.SESSION_SECRET)
-    .digest('base64')
-    .substring(0, 32);
-
-function encrypt(text) {
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
-
-    const encrypted = Buffer.concat([
-        cipher.update(text),
-        cipher.final()
-    ]);
-
-    return iv.toString('hex') + ':' + encrypted.toString('hex');
-}
-
-function decrypt(hash) {
-    const [iv, content] = hash.split(':');
-
-    const decipher = crypto.createDecipheriv(
-        algorithm,
-        secretKey,
-        Buffer.from(iv, 'hex')
-    );
-
-    const decrypted = Buffer.concat([
-        decipher.update(Buffer.from(content, 'hex')),
-        decipher.final()
-    ]);
-
-    return decrypted.toString();
-}
 
 // =====================
 // SESSION
@@ -110,21 +69,6 @@ function isAdmin(req, res, next) {
     }
 
     return res.status(403).send('Access Denied');
-}
-
-function isAuthenticated(req, res, next) {
-
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-
-    try {
-        const decrypted = JSON.parse(decrypt(req.session.user));
-        req.user = decrypted;
-        return next();
-    } catch (err) {
-        return res.redirect('/login');
-    }
 }
 
 
@@ -219,11 +163,11 @@ app.post('/login', async (req, res) => {
         }
 
         // create session
-        req.session.user = encrypt(JSON.stringify({
+        req.session.user = {
             id: user._id,
             username: user.username,
             role: user.role
-        }));
+        };
 
         req.session.save((err) => {
 
